@@ -1,0 +1,73 @@
+#include <ESP8266WiFi.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+#include <LiquidCrystal.h>
+//#include "secrets.h"
+
+// LCD pin configuration
+const int rs = D4;   // GPIO2
+const int en = D3;   // GPIO0
+const int d4 = D2;   // GPIO4
+const int d5 = D1;   // GPIO5
+const int d6 = D0;   // GPIO16
+const int d7 = D5;   // GPIO15
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);  // Initialize LCD in 4-bit mode
+
+// Wi-Fi credentials
+const char* ssid     = "yourSSID";       // Replace with your SSID
+const char* password = "yourPASSWORD";   // Replace with your Wi-Fi password
+
+// Initialize NTP Client to get time
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 7200, 60000);  // UTC+2 for Cape Town (7200 seconds offset)
+
+void setup(){
+  // Start Serial Monitor
+  Serial.begin(115200);
+  
+  // Initialize the LCD
+  lcd.begin(16, 2);  // Set up the 16x2 LCD
+  
+  // Print a startup message on the LCD
+  lcd.setCursor(0, 0);
+  lcd.print("Connecting...");
+  
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+
+  // Wait until Wi-Fi connects
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    lcd.setCursor(0, 1);
+    lcd.print(".");
+    Serial.print(".");
+  }
+  
+  // Once connected
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Wi-Fi Connected!");
+  
+  // Initialize the NTPClient
+  timeClient.begin();
+}
+
+void loop() {
+  // Update NTP time
+  timeClient.update();
+
+  // Get the current time as a formatted string
+  String formattedTime = timeClient.getFormattedTime();
+
+  // Display the current time on the LCD
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Time:");
+  lcd.setCursor(0, 1);
+  lcd.print(formattedTime);
+
+  // Optional: Print time to Serial Monitor
+  Serial.println("Time: " + formattedTime);
+
+  delay(1000);  // Update the display every second
+}
